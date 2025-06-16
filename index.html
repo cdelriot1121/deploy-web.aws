@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMaster - Gestión de Tareas</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo-container">
+                <i class="fas fa-tasks logo-icon"></i>
+                <h1>TaskMaster</h1>
+            </div>
+            <div class="header-controls">
+                <button id="themeToggle" class="theme-toggle" aria-label="Cambiar tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </header>
+        
+        <main class="app-main">
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2>Filtros</h2>
+                </div>
+                <div class="filter-section">
+                    <h3>Estado</h3>
+                    <div class="filter-options">
+                        <button class="filter-btn active" data-filter="all">Todas</button>
+                        <button class="filter-btn" data-filter="pending">Pendientes</button>
+                        <button class="filter-btn" data-filter="completed">Completadas</button>
+                    </div>
+                </div>
+                <div class="filter-section">
+                    <h3>Prioridad</h3>
+                    <div class="filter-options">
+                        <button class="filter-btn" data-priority="all">Todas</button>
+                        <button class="filter-btn" data-priority="alta">Alta</button>
+                        <button class="filter-btn" data-priority="media">Media</button>
+                        <button class="filter-btn" data-priority="baja">Baja</button>
+                    </div>
+                </div>
+                <div class="filter-section">
+                    <h3>Categorías</h3>
+                    <div id="categoryFilters" class="filter-options category-filters">
+                        <button class="filter-btn active" data-category="all">Todas</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="content">
+                <div class="add-task-section">
+                    <button id="addTaskBtn" class="add-task-btn">
+                        <i class="fas fa-plus"></i> Nueva Tarea
+                    </button>
+                </div>
+                
+                <div id="statusMessage" class="status-message"></div>
+                
+                <div class="tasks-container">
+                    <h2>Mis Tareas <span id="taskCount" class="task-count">0</span></h2>
+                    <div id="tasksList" class="tasks-list">
+                        <!-- Las tareas se cargarán dinámicamente aquí -->
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="app-footer">
+            <p>Desarrollado para despliegue en AWS | <span id="currentYear"></span></p>
+        </footer>
+    </div>
+    
+    <!-- Modal para agregar/editar tareas -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nueva Tarea</h2>
+                <button id="closeModal" class="close-modal">&times;</button>
+            </div>
+            <form id="taskForm">
+                <input type="hidden" id="taskId">
+                <div class="form-group">
+                    <label for="title">Título*</label>
+                    <input type="text" id="title" placeholder="Título de la tarea" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Descripción</label>
+                    <textarea id="description" placeholder="Describe la tarea"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dueDate">Fecha de vencimiento</label>
+                        <input type="date" id="dueDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="priority">Prioridad</label>
+                        <select id="priority">
+                            <option value="baja">Baja</option>
+                            <option value="media" selected>Media</option>
+                            <option value="alta">Alta</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="category">Categoría</label>
+                    <input type="text" id="category" placeholder="Trabajo, Hogar, Estudio, etc.">
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancelBtn" class="cancel-btn">Cancelar</button>
+                    <button type="submit" class="submit-btn">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="overlay" class="overlay"></div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
