@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterButtons = document.querySelectorAll('.filter-btn');
     
     // API configuration
-    const API_URL = 'http://localhost:3000/tasks';
+    const API_URL = 'http://localhost:3000/tasks'; // CORREGIDO: tasks en plural
     
     // Current filter state
     let currentFilters = {
@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showStatus(message, type) {
         statusMessage.textContent = message;
         statusMessage.className = 'status-message ' + type;
+        statusMessage.style.display = 'block';
         
         setTimeout(() => {
             statusMessage.style.display = 'none';
@@ -85,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Close modal
-    function closeModal() {
+    function handleCloseModal() {
         taskModal.classList.remove('active');
         overlay.style.display = 'none';
         document.body.style.overflow = 'auto';
@@ -96,17 +97,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch all tasks
     async function fetchTasks() {
         try {
+            statusMessage.textContent = 'Conectando al servidor...';
+            statusMessage.className = 'status-message';
+            statusMessage.style.display = 'block';
+            
+            console.log('Intentando conectar a:', API_URL);
             const response = await fetch(API_URL);
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             allTasks = await response.json();
+            console.log('Tareas cargadas:', allTasks);
+            
+            statusMessage.style.display = 'none';
             updateCategoryFilters();
             applyFilters();
         } catch (error) {
             console.error('Error al cargar las tareas:', error);
-            showStatus('No se pudieron cargar las tareas. Intenta de nuevo.', 'error');
+            statusMessage.textContent = `Error al conectar con el servidor: ${error.message}`;
+            statusMessage.className = 'status-message error';
+            statusMessage.style.display = 'block';
         }
     }
     
@@ -394,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showStatus('Tarea creada correctamente', 'success');
             }
             
-            closeModal();
+            handleCloseModal();
             applyFilters();
         } catch (error) {
             console.error('Error al guardar la tarea:', error);
@@ -404,9 +416,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Event listeners
     addTaskBtn.addEventListener('click', () => openModal());
-    closeModal.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
-    overlay.addEventListener('click', closeModal);
+    closeModal.addEventListener('click', handleCloseModal);
+    cancelBtn.addEventListener('click', handleCloseModal);
+    overlay.addEventListener('click', handleCloseModal);
     taskForm.addEventListener('submit', submitTaskForm);
     
     // Filter button event listeners
