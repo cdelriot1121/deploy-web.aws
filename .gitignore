@@ -16,3 +16,8 @@ build/
 
 # VS Code test web
 .vscode-test-web/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
