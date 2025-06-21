@@ -18,12 +18,11 @@
                 <h1>TaskMaster</h1>
             </div>
             <div class="header-controls">
-                <button id="themeToggle" class="theme-toggle" aria-label="Cambiar tema">
+                <button id="themeToggle" type="button" class="theme-toggle" aria-label="Cambiar tema">
                     <i class="fas fa-moon"></i>
                 </button>
             </div>
         </header>
-        
         <main class="app-main">
             <div class="sidebar">
                 <div class="sidebar-header">
@@ -32,37 +31,34 @@
                 <div class="filter-section">
                     <h3>Estado</h3>
                     <div class="filter-options">
-                        <button class="filter-btn active" data-filter="all">Todas</button>
-                        <button class="filter-btn" data-filter="pending">Pendientes</button>
-                        <button class="filter-btn" data-filter="completed">Completadas</button>
+                        <button class="filter-btn active" type="button" data-filter="all">Todas</button>
+                        <button class="filter-btn" type="button" data-filter="pending">Pendientes</button>
+                        <button class="filter-btn" type="button" data-filter="completed">Completadas</button>
                     </div>
                 </div>
                 <div class="filter-section">
                     <h3>Prioridad</h3>
                     <div class="filter-options">
-                        <button class="filter-btn" data-priority="all">Todas</button>
-                        <button class="filter-btn" data-priority="alta">Alta</button>
-                        <button class="filter-btn" data-priority="media">Media</button>
-                        <button class="filter-btn" data-priority="baja">Baja</button>
+                        <button class="filter-btn" type="button" data-priority="all">Todas</button>
+                        <button class="filter-btn" type="button" data-priority="alta">Alta</button>
+                        <button class="filter-btn" type="button" data-priority="media">Media</button>
+                        <button class="filter-btn" type="button" data-priority="baja">Baja</button>
                     </div>
                 </div>
                 <div class="filter-section">
                     <h3>Categorías</h3>
                     <div id="categoryFilters" class="filter-options category-filters">
-                        <button class="filter-btn active" data-category="all">Todas</button>
+                        <button class="filter-btn active" type="button" data-category="all">Todas</button>
                     </div>
                 </div>
             </div>
-            
             <div class="content">
                 <div class="add-task-section">
-                    <button id="addTaskBtn" class="add-task-btn">
+                    <button id="addTaskBtn" type="button" class="add-task-btn">
                         <i class="fas fa-plus"></i> Nueva Tarea
                     </button>
                 </div>
-                
                 <div id="statusMessage" class="status-message"></div>
-                
                 <div class="tasks-container">
                     <h2>Mis Tareas <span id="taskCount" class="task-count">0</span></h2>
                     <div id="tasksList" class="tasks-list">
@@ -71,18 +67,16 @@
                 </div>
             </div>
         </main>
-        
         <footer class="app-footer">
             <p>Desarrollado para despliegue en AWS | <span id="currentYear"></span></p>
         </footer>
     </div>
-    
     <!-- Modal para agregar/editar tareas -->
     <div id="taskModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle">Nueva Tarea</h2>
-                <button id="closeModal" class="close-modal">&times;</button>
+                <button id="closeModal" type="button" class="close-modal">&times;</button>
             </div>
             <form id="taskForm">
                 <input type="hidden" id="taskId">
@@ -119,9 +113,7 @@
             </form>
         </div>
     </div>
-    
     <div id="overlay" class="overlay"></div>
-    
     <script src="/script.js"></script>
 </body>
 </html>

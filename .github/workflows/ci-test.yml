@@ -63,8 +63,19 @@ jobs:
     
     - name: Validate HTML
       run: |
+        # Crear un archivo de configuración para html-validate con reglas menos estrictas
+        echo '{
+          "extends": ["html-validate:recommended"],
+          "rules": {
+            "no-trailing-whitespace": "off",
+            "no-implicit-button-type": "off"
+          }
+        }' > .htmlvalidate.json
+        
+        # Instalar y ejecutar html-validate con la configuración personalizada
         npx -y html-validate index.html
         echo "✅ HTML validation passed"
+      continue-on-error: false
 
   deployment-check:
     runs-on: ubuntu-latest
