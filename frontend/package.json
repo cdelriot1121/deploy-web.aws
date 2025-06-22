@@ -1,0 +1,11 @@
+{
+  "name": "taskmaster-frontend",
+  "version": "1.0.0",
+  "description": "Frontend para TaskMaster",
+  "scripts": {
+    "start": "serve -s . -p $PORT"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
