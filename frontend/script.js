@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterButtons = document.querySelectorAll('.filter-btn');
 
     // API configuration
-    const API_URL = 'http://localhost:3000/tasks';
+    const API_URL = 'https://deploy-web-aws.onrender.com/tasks';
 
     let currentFilters = {
         status: 'all',
