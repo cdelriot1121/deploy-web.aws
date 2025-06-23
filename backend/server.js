@@ -1,50 +1,44 @@
-require('dotenv').config(); // Cargar variables de entorno desde el archivo .env
+require('dotenv').config();
 const express = require('express');
-const mysql = require('mysql2/promise');
-const cors = require('cors'); 
+const { Pool } = require('pg');
+const cors = require('cors');
 
 const app = express();
 
-app.use(cors()); // Habilitar CORS para permitir solicitudes desde otros dominios
-app.use(express.json()); // Habilitar el análisis de JSON en las solicitudes
+app.use(cors());
+app.use(express.json());
 
-// Configuración de la base de datos MySQL
-const dbConfig = {
-    host: process.env.DB_HOST, // Dirección del host de la base de datos
-    user: process.env.DB_USER, // Usuario de la base de datos
-    password: process.env.DB_PASSWORD, // Contraseña del usuario de la base de datos
-    database: process.env.DB_NAME // Nombre de la base de datos
-};
+// Configuración de la base de datos PostgreSQL
+const pool = new Pool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT || 5432
+});
 
 // Puerto en el que se ejecutará el servidor
 const port = process.env.PORT || 3000;
 
-// Función para obtener una conexión a la base de datos
-async function getConnection() {
-    try {
-        const connection = await mysql.createConnection(dbConfig);
-        console.log('Conectado a la base de datos MySQL.');
-        return connection;
-    } catch (err) {
-        console.error('Error al conectar con la base de datos:', err.stack);
-        process.exit(1); 
-    }
-}
+// Probar la conexión a la base de datos
+pool.connect()
+    .then(() => console.log('Conectado a la base de datos PostgreSQL.'))
+    .catch(err => {
+        console.error('Error al conectar con la base de datos:', err);
+        process.exit(1);
+    });
 
-// al iniciar la base de datos
+// Iniciar la base de datos
 async function initDatabase() {
-    let connection;
     try {
-        connection = await getConnection();
-        
-        // creacion de la tabla "tasks" si no existe
-        await connection.execute(`
+        // Creación de la tabla "tasks" si no existe
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS tasks (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 description TEXT,
                 due_date DATE,
-                priority ENUM('baja', 'media', 'alta') DEFAULT 'media',
+                priority VARCHAR(5) CHECK (priority IN ('baja', 'media', 'alta')) DEFAULT 'media',
                 category VARCHAR(100),
                 completed BOOLEAN DEFAULT false,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -54,53 +48,42 @@ async function initDatabase() {
         console.log('Base de datos inicializada correctamente');
     } catch (err) {
         console.error('Error al inicializar la base de datos:', err);
-    } finally {
-        if (connection) connection.end(); 
     }
 }
 
-// iniciarlizar la base de datos al iniciar la aplicación
+// Inicializar la base de datos al iniciar la aplicación
 initDatabase();
 
-
-//  obtener todas las tareas
+// Obtener todas las tareas
 app.get('/tasks', async (req, res) => {
-    let connection;
     try {
-        connection = await getConnection();
-        const [rows] = await connection.execute('SELECT * FROM tasks ORDER BY due_date ASC, priority DESC');
-        res.json(rows); 
+        const result = await pool.query('SELECT * FROM tasks ORDER BY due_date ASC NULLS LAST, priority DESC');
+        res.json(result.rows);
     } catch (err) {
         console.error('Error al obtener tareas:', err);
         res.status(500).json({ error: 'Error al obtener tareas' });
-    } finally {
-        if (connection) connection.end();
     }
 });
 
-
+// Obtener una tarea por ID
 app.get('/tasks/:id', async (req, res) => {
-    const id = req.params.id; 
-    let connection;
+    const id = req.params.id;
     
     try {
-        connection = await getConnection();
-        const [rows] = await connection.execute('SELECT * FROM tasks WHERE id = ?', [id]);
+        const result = await pool.query('SELECT * FROM tasks WHERE id = $1', [id]);
         
-        if (rows.length === 0) {
+        if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Tarea no encontrada' });
         }
         
-        res.json(rows[0]); 
+        res.json(result.rows[0]);
     } catch (err) {
         console.error('Error al obtener tarea:', err);
         res.status(500).json({ error: 'Error al obtener tarea' });
-    } finally {
-        if (connection) connection.end();
     }
 });
 
-
+// Crear una nueva tarea
 app.post('/tasks', async (req, res) => {
     const { title, description, due_date, priority, category } = req.body;
     
@@ -108,110 +91,86 @@ app.post('/tasks', async (req, res) => {
         return res.status(400).json({ error: 'El título de la tarea es requerido.' });
     }
 
-    let connection;
     try {
-        connection = await getConnection();
-        const [result] = await connection.execute(
-            'INSERT INTO tasks (title, description, due_date, priority, category) VALUES (?, ?, ?, ?, ?)',
+        const result = await pool.query(
+            'INSERT INTO tasks (title, description, due_date, priority, category) VALUES ($1, $2, $3, $4, $5) RETURNING *',
             [title, description || null, due_date || null, priority || 'media', category || null]
         );
         
-        
-        const [rows] = await connection.execute('SELECT * FROM tasks WHERE id = ?', [result.insertId]);
-        res.status(201).json(rows[0]); 
+        res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error('Error al agregar tarea:', err);
         res.status(500).json({ error: 'Error al agregar tarea' });
-    } finally {
-        if (connection) connection.end();
     }
 });
 
-
+// Actualizar una tarea
 app.put('/tasks/:id', async (req, res) => {
-    const id = req.params.id; // ID de la tarea a actualizar
+    const id = req.params.id;
     const { title, description, due_date, priority, category, completed } = req.body;
     
     if (!title) {
         return res.status(400).json({ error: 'El título de la tarea es requerido.' });
     }
     
-    let connection;
     try {
-        connection = await getConnection();
-        await connection.execute(
-            'UPDATE tasks SET title = ?, description = ?, due_date = ?, priority = ?, category = ?, completed = ? WHERE id = ?',
+        const result = await pool.query(
+            'UPDATE tasks SET title = $1, description = $2, due_date = $3, priority = $4, category = $5, completed = $6 WHERE id = $7 RETURNING *',
             [title, description || null, due_date || null, priority || 'media', category || null, completed || false, id]
         );
         
-        
-        const [rows] = await connection.execute('SELECT * FROM tasks WHERE id = ?', [id]);
-        
-        if (rows.length === 0) {
+        if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Tarea no encontrada' });
         }
         
-        res.json(rows[0]); 
+        res.json(result.rows[0]);
     } catch (err) {
         console.error('Error al actualizar tarea:', err);
         res.status(500).json({ error: 'Error al actualizar tarea' });
-    } finally {
-        if (connection) connection.end();
     }
 });
 
-
+// Cambiar el estado de una tarea
 app.patch('/tasks/:id/toggle', async (req, res) => {
-    const id = req.params.id; 
-    let connection;
+    const id = req.params.id;
     
     try {
-        connection = await getConnection();
+        const checkResult = await pool.query('SELECT completed FROM tasks WHERE id = $1', [id]);
         
-        const [rows] = await connection.execute('SELECT completed FROM tasks WHERE id = ?', [id]);
-        
-        if (rows.length === 0) {
+        if (checkResult.rows.length === 0) {
             return res.status(404).json({ error: 'Tarea no encontrada' });
         }
         
+        const newState = !checkResult.rows[0].completed;
         
-        const newState = !rows[0].completed;
+        await pool.query('UPDATE tasks SET completed = $1 WHERE id = $2', [newState, id]);
         
-        
-        await connection.execute('UPDATE tasks SET completed = ? WHERE id = ?', [newState, id]);
-        
-        res.json({ id, completed: newState }); 
+        res.json({ id, completed: newState });
     } catch (err) {
         console.error('Error al actualizar estado de tarea:', err);
         res.status(500).json({ error: 'Error al actualizar estado de tarea' });
-    } finally {
-        if (connection) connection.end();
     }
 });
 
-
+// Eliminar una tarea
 app.delete('/tasks/:id', async (req, res) => {
-    const id = req.params.id; 
-    let connection;
+    const id = req.params.id;
     
     try {
-        connection = await getConnection();
-        const [result] = await connection.execute('DELETE FROM tasks WHERE id = ?', [id]);
+        const result = await pool.query('DELETE FROM tasks WHERE id = $1 RETURNING id', [id]);
         
-        if (result.affectedRows === 0) {
+        if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Tarea no encontrada' });
         }
         
-        res.status(200).json({ message: 'Tarea eliminada correctamente' }); // Confirmar eliminación
+        res.status(200).json({ message: 'Tarea eliminada correctamente' });
     } catch (err) {
         console.error('Error al eliminar tarea:', err);
         res.status(500).json({ error: 'Error al eliminar tarea' });
-    } finally {
-        if (connection) connection.end();
     }
 });
 
-// iniciar el server
+// Iniciar el servidor
 app.listen(port, () => {
     console.log(`Servidor backend escuchando en http://localhost:${port}`);
 });
